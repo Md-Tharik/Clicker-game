@@ -1,14 +1,238 @@
-<div class="game-wrapper">
-  <div class="ui">
-    <h1>IMPOSSIBLE CLICKER</h1>
-    <div class="stats">
-      <p>LEGENDS WHO WON: <span id="score">0</span></p>
-    </div>
-  </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impossible Button: COIN FLIP MODE</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
 
-  <button id="evil-btn">CLICK TO WIN</button>
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(circle, #302b63, #0f0c29);
+  display: flex;
+  flex-direction: column;
+  align-items: center; 
+  font-family: sans-serif;
+  user-select: none;
+}
+
+.ui {
+  margin-top: 50px;
+  text-align: center;
+  z-index: 1;
+  pointer-events: none; 
+}
+
+h1 {
+  font-family: 'Bungee', cursive;
+  font-size: clamp(1.5rem, 8vw, 3rem);
+  color: #ff0055;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+}
+
+.stats {
+  color: #00f2ff;
+  font-family: 'Bungee', cursive;
+  font-size: 1.2rem;
+  margin-top: 10px;
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+}
+
+#evil-btn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); 
   
-  <div class="hint">"It's easy, just click the button..."</div>
+  padding: 15px 30px;
+  font-family: 'Bungee', cursive;
+  font-size: 1.2rem;
+  background: #ff0055;
+  color: white;
+  border: 4px solid white;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
+  z-index: 10; 
+}
+
+/* --- POPUP STYLES --- */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s;
+}
+
+.popup-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.popup-content {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  text-align: center;
+  max-width: 80%;
+  border: 5px solid #ff0055;
+  box-shadow: 0 0 50px rgba(255, 0, 85, 0.8);
+  transform: scale(0.7);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.popup-overlay.active .popup-content {
+  transform: scale(1);
+}
+
+.popup-text {
+  color: #302b63;
+  font-family: 'Bungee', cursive;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+.close-btn {
+  background: #302b63;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-family: 'Bungee', cursive;
+  cursor: pointer;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+</style>
+</head>
+<body>
+
+<div class="ui">
+  <h1>LITERALLY IMPOSSIBLE TO MISS</h1>
+  <div class="stats">SCORE: <span id="score">0</span></div>
 </div>
-<link rel="stylesheet" href="style.css">
-<script src="Script.js"></script>
+
+<button id="evil-btn">START</button>
+
+<div class="popup-overlay" id="popup">
+  <div class="popup-content">
+    <div class="popup-text" id="popup-msg">...</div>
+    <button class="close-btn" id="close-popup-btn">TRY AGAIN</button>
+  </div>
+</div>
+
+<script>
+window.onload = () => {
+  const btn = document.getElementById('evil-btn');
+  const scoreDisplay = document.getElementById('score');
+  const popup = document.getElementById('popup');
+  const popupMsg = document.getElementById('popup-msg');
+  const closeBtn = document.getElementById('close-popup-btn');
+
+  let score = 0;
+
+  const victoryMessages = [
+    "Pure luck. Do it again.",
+    "I blinked. Won't happen again.",
+    "Are you cheating?",
+    "My code glitched. You didn't win.",
+    "Impressive... for a human.",
+    "This victory was sponsored by pure luck.",
+    "Enjoy it. This win expires in 5 seconds.",
+    "Skill was optional today, apparently.",
+    "I let you win because I felt bad for you.",
+    "That win was... suspicious."
+  ];
+
+  const insults = ["TOO SLOW!", "NOPE!", "SIKE!", "LOL", "CATCH ME!", "ZOOM!", "TRY HARDER"];
+  
+  const PANIC_ZONE = 150; 
+
+  function showPopup(message) {
+    popupMsg.innerText = message;
+    popup.classList.add('active');
+  }
+
+  function closePopup() {
+    popup.classList.remove('active');
+    moveButton(); 
+  }
+
+  closeBtn.addEventListener('click', closePopup);
+
+  const handleMove = (x, y) => {
+    if (popup.classList.contains('active')) return;
+
+    const btnRect = btn.getBoundingClientRect();
+    const btnCenterX = btnRect.left + btnRect.width / 2;
+    const btnCenterY = btnRect.top + btnRect.height / 2;
+    const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
+
+    // 1. Panic Zone Logic (Moves if you are close but not touching)
+    if (distance < PANIC_ZONE && distance > 60) {
+      moveButton();
+    }
+    
+    // 2. Slippery Logic (Moves if you ARE touching)
+    else if (distance <= 60) {
+      // 50% chance to move
+      // Math.random() gives 0.0 to 1.0. 
+      // If it's > 0.5, it moves (True). If < 0.5, it stays (False).
+      if (Math.random() > 0.6) { 
+        moveButton();
+      }
+    }
+  };
+
+  document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+  document.addEventListener('touchmove', (e) => {
+    const touch = e.touches[0];
+    handleMove(touch.clientX, touch.clientY);
+  }, { passive: true });
+
+  function moveButton() {
+    btn.style.transform = "none";
+    
+    const maxX = window.innerWidth - btn.offsetWidth - 50;
+    const maxY = window.innerHeight - btn.offsetHeight - 50;
+    
+    const randomX = Math.max(50, Math.random() * maxX);
+    const randomY = Math.max(50, Math.random() * maxY);
+
+    btn.style.left = randomX + 'px';
+    btn.style.top = randomY + 'px';
+    
+    btn.innerText = insults[Math.floor(Math.random() * insults.length)];
+    
+    const scale = 0.8 + Math.random() * 0.4;
+    btn.style.transform = `scale(${scale})`;
+  }
+
+  btn.addEventListener('click', () => {
+    score++;
+    scoreDisplay.innerText = score;
+    const randomMsg = victoryMessages[Math.floor(Math.random() * victoryMessages.length)];
+    showPopup(randomMsg);
+  });
+};
+</script>
+
+</body>
+  </html>
+  
