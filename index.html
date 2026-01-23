@@ -3,253 +3,169 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Literally Impossible To Miss</title>
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<title>You Cannot Win</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+  body {
+    margin: 0;
+    height: 100vh;
+    background-color: #1a1a1a;
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden; /* No scrolling allowed */
+    user-select: none; /* Cannot highlight text */
+  }
 
-body, html {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  background: radial-gradient(circle, #302b63, #0f0c29);
-  display: flex;
-  flex-direction: column;
-  align-items: center; 
-  font-family: sans-serif;
-  user-select: none; 
-  -webkit-user-select: none;
-}
+  #score-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 1.5rem;
+    pointer-events: none;
+  }
 
-.ui {
-  margin-top: 50px;
-  text-align: center;
-  z-index: 1;
-  pointer-events: none; 
-}
+  #impossible-btn {
+    position: absolute;
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+    background: #ff4757;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
+    transition: transform 0.1s; /* Only transform transitions, position is instant */
+    z-index: 10;
+    outline: none; /* No focus ring */
+  }
 
-h1 {
-  font-family: 'Bungee', cursive;
-  font-size: clamp(1.5rem, 6vw, 3rem);
-  color: #ff0055;
-  margin: 0;
-  text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
-  line-height: 1.2;
-}
+  /* When the button "glitches" out */
+  .vanish {
+    opacity: 0;
+    pointer-events: none;
+  }
 
-.stats {
-  color: #00f2ff;
-  font-family: 'Bungee', cursive;
-  font-size: 1.2rem;
-  margin-top: 10px;
-  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
-}
+  /* The Popup Modal */
+  #popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #333;
+    padding: 20px 40px;
+    border: 2px solid #ff4757;
+    border-radius: 10px;
+    text-align: center;
+    display: none;
+    z-index: 100;
+    box-shadow: 0 0 50px black;
+  }
 
-#evil-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); 
-  padding: 15px 30px;
-  font-family: 'Bungee', cursive;
-  font-size: 1.2rem;
-  background: #ff0055;
-  color: white;
-  border: 4px solid white;
-  border-radius: 10px;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
-  z-index: 10;
-  transition: opacity 0.2s;
-}
+  #popup.active {
+    display: block;
+  }
 
-/* If the user pauses the game/opens a menu, we hide the button */
-.vanish {
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-.footer {
-  position: fixed;
-  bottom: 20px;
-  width: 100%;
-  text-align: center;
-  font-family: 'Courier New', monospace;
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
-  z-index: 5;
-}
-
-.footer a {
-  color: white;
-  text-decoration: none;
-  font-weight: bold;
-  transition: color 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* --- POPUP STYLES --- */
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  z-index: 999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s;
-}
-
-.popup-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-.popup-content {
-  background: #fff;
-  padding: 30px;
-  border-radius: 15px;
-  text-align: center;
-  max-width: 80%;
-  border: 5px solid #ff0055;
-  box-shadow: 0 0 50px rgba(255, 0, 85, 0.8);
-}
-
-.popup-text {
-  color: #302b63;
-  font-family: 'Bungee', cursive;
-  font-size: 1.2rem;
-  margin-bottom: 20px;
-}
-
-.close-btn {
-  background: #302b63;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-family: 'Bungee', cursive;
-  cursor: pointer;
-  border-radius: 5px;
-  font-size: 1rem;
-}
+  #popup button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    cursor: pointer;
+    background: #fff;
+    border: none;
+    font-weight: bold;
+  }
+  
+  #screen-too-small {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: black;
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
 </style>
 </head>
 <body>
 
-<div class="ui">
-  <h1>LITERALLY IMPOSSIBLE</h1>
-  <div class="stats">ATTEMPTS: <span id="score">0</span></div>
+<div id="score-container">Failures: <span id="score">0</span></div>
+
+<button id="impossible-btn" tabindex="-1">CLICK ME</button>
+
+<div id="popup">
+  <h2 id="popup-text"></h2>
+  <button onclick="closePopup()">Try Again</button>
 </div>
 
-<div id="evil-btn" tabindex="-1">START</div>
-
-<div class="popup-overlay" id="popup">
-  <div class="popup-content">
-    <div class="popup-text" id="popup-msg">...</div>
-    <button class="close-btn" id="close-popup-btn">GIVE UP</button>
-  </div>
-</div>
-
-<div class="footer">
-  <a href="https://instagram.com/tharik563" target="_blank">
-    <i class="fab fa-instagram"></i> @tharik563
-  </a>
+<div id="screen-too-small">
+    <h1>Don't try to trap me.<br>Make the window bigger.</h1>
 </div>
 
 <script>
-window.onload = () => {
-  const btn = document.getElementById('evil-btn');
+  const btn = document.getElementById('impossible-btn');
   const scoreDisplay = document.getElementById('score');
   const popup = document.getElementById('popup');
-  const popupMsg = document.getElementById('popup-msg');
-  const closeBtn = document.getElementById('close-popup-btn');
+  const popupText = document.getElementById('popup-text');
+  const tooSmallMsg = document.getElementById('screen-too-small');
 
   let attempts = 0;
-  const insults = ["NOPE!", "TOO SLOW!", "TRY AGAIN", "ALMOST", "LOL", "BYE!"];
+  
+  const insults = [
+    "Too Slow!", "Nice Try", "Nope", "Missed!", 
+    "In your dreams", "Not today", "Oof", "Too easy", 
+    "Give up", "Lag?", "Matrix says no", "404 Error"
+  ];
 
-  function showPopup(message) {
-    popupMsg.innerText = message;
-    popup.classList.add('active');
-  }
-
-  function closePopup() {
-    popup.classList.remove('active');
-    moveButton(); 
-  }
-
-  closeBtn.addEventListener('click', closePopup);
-
-  // --- DEFENSE 1: Context Menu Destroyer ---
-  // If they try to right-click, we kill the menu AND move the button.
-  window.addEventListener('contextmenu', (e) => {
-    e.preventDefault(); // Stop the menu from opening
-    moveButton(); // Teleport the button immediately
-    return false;
-  }, { capture: true }); // 'Capture' phase ensures we catch it before anything else
-
-  // --- DEFENSE 2: The "Focus Lost" Trap ---
-  // If the user somehow opens a menu that freezes the page, 
-  // the window loses 'focus'. We hide the button immediately.
-  window.addEventListener('blur', () => {
-     btn.classList.add('vanish'); // Button becomes invisible and unclickable
-  });
-
-  // When they come back (close menu), show it again (but move it first)
-  window.addEventListener('focus', () => {
-     moveButton();
-     setTimeout(() => btn.classList.remove('vanish'), 100);
-  });
-
-  // --- DEFENSE 3: Keyboard Protection ---
-  // Prevent F12, Context Menu Key, and Tab
-  window.addEventListener('keydown', (e) => {
-    if (
-        e.key === "ContextMenu" || 
-        e.key === "F12" || 
-        (e.ctrlKey && e.shiftKey && e.key === "I") ||
-        e.key === "Tab"
-       ) {
-      e.preventDefault();
-      moveButton();
-    }
-  });
-
-  const handleMove = (x, y) => {
+  // ============================================
+  // 1. THE PHYSICS ENGINE (Forcefield)
+  // ============================================
+  const handleInteraction = (x, y) => {
     if (popup.classList.contains('active')) return;
 
     const btnRect = btn.getBoundingClientRect();
     const btnCenterX = btnRect.left + btnRect.width / 2;
     const btnCenterY = btnRect.top + btnRect.height / 2;
+    
+    // Calculate distance between cursor/finger and button center
     const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
 
-    // If mouse gets within 150px, move.
-    // We do NOT rely on CSS hover anymore, strictly math.
+    // If within 150px, RUN AWAY
     if (distance < 150) {
-      // 10% chance to just vanish briefly to confuse them
+      // 10% chance to visually glitch out
       if(Math.random() > 0.9) {
           btn.classList.add('vanish');
-          setTimeout(() => btn.classList.remove('vanish'), 500);
+          setTimeout(() => btn.classList.remove('vanish'), 300);
       }
       moveButton();
     }
   };
 
-  document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+  // Mouse tracker
+  document.addEventListener('mousemove', (e) => handleInteraction(e.clientX, e.clientY));
 
+  // Touch tracker (for mobile) - Passive: false allows us to prevent scroll if needed
+  document.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      handleInteraction(touch.clientX, touch.clientY);
+  }, { passive: false });
+  
+  document.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      handleInteraction(touch.clientX, touch.clientY);
+  }, { passive: false });
+
+  // ============================================
+  // 2. THE MOVEMENT LOGIC
+  // ============================================
   function moveButton() {
-    // If hidden, don't move (it stays hidden until focus returns)
-    if(btn.classList.contains('vanish') && !document.hasFocus()) return;
+    // Check if they are trying to cheat by making window small
+    if(window.innerWidth < 400 || window.innerHeight < 400) {
+        tooSmallMsg.style.display = 'flex';
+        return; 
+    } else {
+        tooSmallMsg.style.display = 'none';
+    }
 
     const maxX = window.innerWidth - 150;
     const maxY = window.innerHeight - 100;
@@ -261,28 +177,66 @@ window.onload = () => {
     btn.style.top = randomY + 'px';
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
-    // Random rotation and scale
-    const rotate = (Math.random() * 20) - 10;
-    btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
+    // Add random rotation to make it look chaotic
+    const rotate = (Math.random() * 40) - 20;
+    btn.style.transform = `rotate(${rotate}deg)`;
   }
 
-  // Final check: If they actually click it (scripting or impossible luck)
+  // ============================================
+  // 3. THE "IMPOSSIBLE" DEFENSES
+  // ============================================
+
+  // DEFENSE A: Prevent Right Click Context Menu
+  document.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); // Stop the menu from opening
+      moveButton(); // Move the button to mock them
+  });
+
+  // DEFENSE B: Mousedown (The moment they press, before release)
   btn.addEventListener('mousedown', (e) => {
-     e.preventDefault(); // Prevent focus
-     if(e.button === 2) return; // Ignore right clicks here (handled by window)
-     
-     // Even if they click, we check if the mouse is ACTUALLY over the button
-     // This prevents triggered events from console
+     e.preventDefault(); 
+     // If they manage to click, move it BEFORE the click registers
      moveButton(); 
   });
-  
+
+  // DEFENSE C: Keyboard Navigation Block
+  // If they hit Tab or Enter to try and focus the button
+  document.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab' || e.key === 'Enter') {
+          e.preventDefault();
+          moveButton();
+      }
+  });
+
+  // DEFENSE D: The "Hacker" Catch
+  // If they somehow trigger a click event via console script
   btn.addEventListener('click', (e) => {
-      // Mock them anyway
       attempts++;
       scoreDisplay.innerText = attempts;
-      showPopup("Nice exploit attempt. Still didn't win.");
+      showPopup("System: Exploit Detected. You still lose.");
   });
-};
+  
+  // DEFENSE E: Anti-Resize Trap
+  window.addEventListener('resize', () => {
+      moveButton(); // Move immediately on resize
+  });
+
+  // ============================================
+  // 4. UTILITIES
+  // ============================================
+  function showPopup(msg) {
+    popupText.innerText = msg;
+    popup.classList.add('active');
+  }
+
+  function closePopup() {
+    popup.classList.remove('active');
+    moveButton(); // Move it again just to be sure
+  }
+
+  // Initialize position
+  moveButton();
+
 </script>
 
 </body>
