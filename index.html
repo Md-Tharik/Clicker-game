@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Impossible Button: COIN FLIP MODE</title>
+<title>Literally Impossible To Miss</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
 
@@ -30,10 +32,11 @@ body, html {
 
 h1 {
   font-family: 'Bungee', cursive;
-  font-size: clamp(1.5rem, 8vw, 3rem);
+  font-size: clamp(1.5rem, 6vw, 3rem); /* Responsive text */
   color: #ff0055;
   margin: 0;
   text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+  line-height: 1.2;
 }
 
 .stats {
@@ -61,6 +64,33 @@ h1 {
   white-space: nowrap;
   box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
   z-index: 10; 
+}
+
+/* --- FOOTER STYLES --- */
+.footer {
+  position: fixed;
+  bottom: 20px;
+  width: 100%;
+  text-align: center;
+  font-family: 'Courier New', monospace;
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  z-index: 5;
+}
+
+.footer a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* Space between icon and text */
+}
+
+.footer a:hover {
+  color: #ff0055; /* Turns pink on hover */
+  text-shadow: 0 0 10px #ff0055;
 }
 
 /* --- POPUP STYLES --- */
@@ -137,6 +167,12 @@ h1 {
   </div>
 </div>
 
+<div class="footer">
+  <a href="https://instagram.com/tharik563" target="_blank">
+    <i class="fab fa-instagram"></i> @tharik563
+  </a>
+</div>
+
 <script>
 window.onload = () => {
   const btn = document.getElementById('evil-btn');
@@ -184,17 +220,14 @@ window.onload = () => {
     const btnCenterY = btnRect.top + btnRect.height / 2;
     const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
 
-    // 1. Panic Zone Logic (Moves if you are close but not touching)
+    // 1. Panic Zone Logic
     if (distance < PANIC_ZONE && distance > 60) {
       moveButton();
     }
     
-    // 2. Slippery Logic (Moves if you ARE touching)
+    // 2. Slippery Logic (50% Chance)
     else if (distance <= 60) {
-      // 50% chance to move
-      // Math.random() gives 0.0 to 1.0. 
-      // If it's > 0.5, it moves (True). If < 0.5, it stays (False).
-      if (Math.random() > 0.6) { 
+      if (Math.random() > 0.5) { 
         moveButton();
       }
     }
@@ -234,5 +267,4 @@ window.onload = () => {
 </script>
 
 </body>
-  </html>
-  
+</html>
