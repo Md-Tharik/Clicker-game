@@ -20,7 +20,7 @@ body, html {
   flex-direction: column;
   align-items: center; 
   font-family: sans-serif;
-  user-select: none;
+  user-select: none; /* Prevents highlighting text */
 }
 
 .ui {
@@ -32,7 +32,7 @@ body, html {
 
 h1 {
   font-family: 'Bungee', cursive;
-  font-size: clamp(1.5rem, 6vw, 3rem); /* Responsive text */
+  font-size: clamp(1.5rem, 6vw, 3rem);
   color: #ff0055;
   margin: 0;
   text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
@@ -47,6 +47,7 @@ h1 {
   text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
 }
 
+/* We use a div instead of a button to strip default accessible behaviors like Enter key clicks */
 #evil-btn {
   position: absolute;
   top: 50%;
@@ -63,10 +64,16 @@ h1 {
   cursor: pointer;
   white-space: nowrap;
   box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
-  z-index: 10; 
+  z-index: 10;
+  transition: transform 0.1s; /* Faster visual update */
 }
 
-/* --- FOOTER STYLES --- */
+/* THE GHOST CLASS: Makes the button unclickable to the browser engine */
+.ghost-mode {
+  pointer-events: none !important;
+  opacity: 0.9; /* Slight visual tell that it's phasing out, optional */
+}
+
 .footer {
   position: fixed;
   bottom: 20px;
@@ -85,11 +92,11 @@ h1 {
   transition: color 0.3s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px; /* Space between icon and text */
+  gap: 8px;
 }
 
 .footer a:hover {
-  color: #ff0055; /* Turns pink on hover */
+  color: #ff0055;
   text-shadow: 0 0 10px #ff0055;
 }
 
@@ -100,7 +107,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(5px);
   z-index: 999;
   display: flex;
@@ -151,19 +158,19 @@ h1 {
 }
 </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
 <div class="ui">
-  <h1>LITERALLY IMPOSSIBLE TO MISS</h1>
-  <div class="stats">SCORE: <span id="score">0</span></div>
+  <h1>LITERALLY IMPOSSIBLE</h1>
+  <div class="stats">ATTEMPTS: <span id="score">0</span></div>
 </div>
 
-<button id="evil-btn">START</button>
+<div id="evil-btn" tabindex="-1">START</div>
 
 <div class="popup-overlay" id="popup">
   <div class="popup-content">
     <div class="popup-text" id="popup-msg">...</div>
-    <button class="close-btn" id="close-popup-btn">TRY AGAIN</button>
+    <button class="close-btn" id="close-popup-btn">GIVE UP</button>
   </div>
 </div>
 
@@ -181,24 +188,19 @@ window.onload = () => {
   const popupMsg = document.getElementById('popup-msg');
   const closeBtn = document.getElementById('close-popup-btn');
 
-  let score = 0;
+  let attempts = 0;
 
-  const victoryMessages = [
-    "Pure luck. Do it again.",
-    "I blinked. Won't happen again.",
-    "Are you cheating?",
-    "My code glitched. You didn't win.",
-    "Impressive... for a human.",
-    "This victory was sponsored by pure luck.",
-    "Enjoy it. This win expires in 5 seconds.",
-    "Skill was optional today, apparently.",
-    "I let you win because I felt bad for you.",
-    "That win was... suspicious."
-  ];
-
-  const insults = ["TOO SLOW!", "NOPE!", "SIKE!", "LOL", "CATCH ME!", "ZOOM!", "TRY HARDER"];
+  // Insults for when the button moves
+  const insults = ["TOO SLOW!", "NOPE!", "SIKE!", "LOL", "NICE TRY", "GLITCH!", "404 ERROR"];
   
-  const PANIC_ZONE = 150; 
+  // Messages if they somehow trigger the click event via console
+  const cheaterMessages = [
+    "Nice try inspecting element.",
+    "Console commands won't save you.",
+    "I removed the win condition.",
+    "Imagine trying to cheat at this.",
+    "Access Denied."
+  ];
 
   function showPopup(message) {
     popupMsg.innerText = message;
@@ -212,6 +214,7 @@ window.onload = () => {
 
   closeBtn.addEventListener('click', closePopup);
 
+  // --- CORE DEFENSE LOGIC ---
   const handleMove = (x, y) => {
     if (popup.classList.contains('active')) return;
 
@@ -220,48 +223,82 @@ window.onload = () => {
     const btnCenterY = btnRect.top + btnRect.height / 2;
     const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
 
-    // 1. Panic Zone Logic
-    if (distance < PANIC_ZONE && distance > 60) {
-      moveButton();
+    // 1. THE GHOST ZONE (New Feature)
+    // If mouse is within 100px, we turn off pointer events. 
+    // This allows clicks to pass THROUGH the button. You physically cannot click it.
+    if (distance < 120) {
+        btn.classList.add('ghost-mode');
+    } else {
+        btn.classList.remove('ghost-mode');
     }
-    
-    // 2. Slippery Logic (50% Chance)
-    else if (distance <= 60) {
-      if (Math.random() > 0.9) { 
-        moveButton();
-      }
+
+    // 2. The Movement Zone
+    // We expanded the panic zone significantly.
+    if (distance < 200) {
+      moveButton();
     }
   };
 
+  // Run checks on mouse move
   document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+  
+  // Run checks on touch drag
   document.addEventListener('touchmove', (e) => {
     const touch = e.touches[0];
     handleMove(touch.clientX, touch.clientY);
   }, { passive: true });
 
   function moveButton() {
-    btn.style.transform = "none";
+    btn.style.transform = "translate(-50%, -50%) scale(0.9)"; // Reset slightly
     
-    const maxX = window.innerWidth - btn.offsetWidth - 50;
-    const maxY = window.innerHeight - btn.offsetHeight - 50;
+    // Ensure button stays well within the viewport
+    const maxX = window.innerWidth - 150;
+    const maxY = window.innerHeight - 100;
+    const minX = 100;
+    const minY = 100;
     
-    const randomX = Math.max(50, Math.random() * maxX);
-    const randomY = Math.max(50, Math.random() * maxY);
+    const randomX = Math.max(minX, Math.random() * maxX);
+    const randomY = Math.max(minY, Math.random() * maxY);
 
     btn.style.left = randomX + 'px';
     btn.style.top = randomY + 'px';
     
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
+    // Add a random rotation to disorient
+    const rotate = (Math.random() * 20) - 10;
     const scale = 0.8 + Math.random() * 0.4;
-    btn.style.transform = `scale(${scale})`;
+    btn.style.transform = `translate(-50%, -50%) scale(${scale}) rotate(${rotate}deg)`;
   }
 
-  btn.addEventListener('click', () => {
-    score++;
-    scoreDisplay.innerText = score;
-    const randomMsg = victoryMessages[Math.floor(Math.random() * victoryMessages.length)];
+  // --- LAST RESORT DEFENSE ---
+  // If they somehow click it (e.g. via code), we mock them.
+  btn.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // Stop focus
+      moveButton();
+  });
+
+  btn.addEventListener('click', (e) => {
+    attempts++;
+    scoreDisplay.innerText = attempts;
+    
+    // If the event is "trusted" (human click), it shouldn't be possible due to ghost-mode.
+    // If it happens, it's a frame glitch. We just move and do nothing.
+    if(e.isTrusted) {
+        moveButton();
+        return; 
+    }
+
+    // If e.isTrusted is false, they used JavaScript to click() it.
+    const randomMsg = cheaterMessages[Math.floor(Math.random() * cheaterMessages.length)];
     showPopup(randomMsg);
+  });
+
+  // Prevent Spacebar/Enter from clicking if they somehow focused it
+  window.addEventListener('keydown', (e) => {
+      if(e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault();
+      }
   });
 };
 </script>
