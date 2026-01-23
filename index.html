@@ -20,7 +20,8 @@ body, html {
   flex-direction: column;
   align-items: center; 
   font-family: sans-serif;
-  user-select: none; /* Prevents highlighting text */
+  user-select: none; 
+  -webkit-user-select: none;
 }
 
 .ui {
@@ -47,13 +48,11 @@ h1 {
   text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
 }
 
-/* We use a div instead of a button to strip default accessible behaviors like Enter key clicks */
 #evil-btn {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%); 
-  
   padding: 15px 30px;
   font-family: 'Bungee', cursive;
   font-size: 1.2rem;
@@ -65,13 +64,13 @@ h1 {
   white-space: nowrap;
   box-shadow: 0 0 20px rgba(255, 0, 85, 0.6);
   z-index: 10;
-  transition: transform 0.1s; /* Faster visual update */
+  transition: opacity 0.2s;
 }
 
-/* THE GHOST CLASS: Makes the button unclickable to the browser engine */
-.ghost-mode {
+/* If the user pauses the game/opens a menu, we hide the button */
+.vanish {
+  opacity: 0 !important;
   pointer-events: none !important;
-  opacity: 0.9; /* Slight visual tell that it's phasing out, optional */
 }
 
 .footer {
@@ -95,11 +94,6 @@ h1 {
   gap: 8px;
 }
 
-.footer a:hover {
-  color: #ff0055;
-  text-shadow: 0 0 10px #ff0055;
-}
-
 /* --- POPUP STYLES --- */
 .popup-overlay {
   position: fixed;
@@ -107,8 +101,7 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(5px);
+  background: rgba(0, 0, 0, 0.95);
   z-index: 999;
   display: flex;
   justify-content: center;
@@ -131,12 +124,6 @@ h1 {
   max-width: 80%;
   border: 5px solid #ff0055;
   box-shadow: 0 0 50px rgba(255, 0, 85, 0.8);
-  transform: scale(0.7);
-  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.popup-overlay.active .popup-content {
-  transform: scale(1);
 }
 
 .popup-text {
@@ -158,7 +145,7 @@ h1 {
 }
 </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
 <div class="ui">
   <h1>LITERALLY IMPOSSIBLE</h1>
@@ -189,18 +176,7 @@ window.onload = () => {
   const closeBtn = document.getElementById('close-popup-btn');
 
   let attempts = 0;
-
-  // Insults for when the button moves
-  const insults = ["TOO SLOW!", "NOPE!", "SIKE!", "LOL", "NICE TRY", "GLITCH!", "404 ERROR"];
-  
-  // Messages if they somehow trigger the click event via console
-  const cheaterMessages = [
-    "Nice try inspecting element.",
-    "Console commands won't save you.",
-    "I removed the win condition.",
-    "Imagine trying to cheat at this.",
-    "Access Denied."
-  ];
+  const insults = ["NOPE!", "TOO SLOW!", "TRY AGAIN", "ALMOST", "LOL", "BYE!"];
 
   function showPopup(message) {
     popupMsg.innerText = message;
@@ -214,7 +190,41 @@ window.onload = () => {
 
   closeBtn.addEventListener('click', closePopup);
 
-  // --- CORE DEFENSE LOGIC ---
+  // --- DEFENSE 1: Context Menu Destroyer ---
+  // If they try to right-click, we kill the menu AND move the button.
+  window.addEventListener('contextmenu', (e) => {
+    e.preventDefault(); // Stop the menu from opening
+    moveButton(); // Teleport the button immediately
+    return false;
+  }, { capture: true }); // 'Capture' phase ensures we catch it before anything else
+
+  // --- DEFENSE 2: The "Focus Lost" Trap ---
+  // If the user somehow opens a menu that freezes the page, 
+  // the window loses 'focus'. We hide the button immediately.
+  window.addEventListener('blur', () => {
+     btn.classList.add('vanish'); // Button becomes invisible and unclickable
+  });
+
+  // When they come back (close menu), show it again (but move it first)
+  window.addEventListener('focus', () => {
+     moveButton();
+     setTimeout(() => btn.classList.remove('vanish'), 100);
+  });
+
+  // --- DEFENSE 3: Keyboard Protection ---
+  // Prevent F12, Context Menu Key, and Tab
+  window.addEventListener('keydown', (e) => {
+    if (
+        e.key === "ContextMenu" || 
+        e.key === "F12" || 
+        (e.ctrlKey && e.shiftKey && e.key === "I") ||
+        e.key === "Tab"
+       ) {
+      e.preventDefault();
+      moveButton();
+    }
+  });
+
   const handleMove = (x, y) => {
     if (popup.classList.contains('active')) return;
 
@@ -223,82 +233,54 @@ window.onload = () => {
     const btnCenterY = btnRect.top + btnRect.height / 2;
     const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
 
-    // 1. THE GHOST ZONE (New Feature)
-    // If mouse is within 100px, we turn off pointer events. 
-    // This allows clicks to pass THROUGH the button. You physically cannot click it.
-    if (distance < 120) {
-        btn.classList.add('ghost-mode');
-    } else {
-        btn.classList.remove('ghost-mode');
-    }
-
-    // 2. The Movement Zone
-    // We expanded the panic zone significantly.
-    if (distance < 200) {
+    // If mouse gets within 150px, move.
+    // We do NOT rely on CSS hover anymore, strictly math.
+    if (distance < 150) {
+      // 10% chance to just vanish briefly to confuse them
+      if(Math.random() > 0.9) {
+          btn.classList.add('vanish');
+          setTimeout(() => btn.classList.remove('vanish'), 500);
+      }
       moveButton();
     }
   };
 
-  // Run checks on mouse move
   document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-  
-  // Run checks on touch drag
-  document.addEventListener('touchmove', (e) => {
-    const touch = e.touches[0];
-    handleMove(touch.clientX, touch.clientY);
-  }, { passive: true });
 
   function moveButton() {
-    btn.style.transform = "translate(-50%, -50%) scale(0.9)"; // Reset slightly
-    
-    // Ensure button stays well within the viewport
+    // If hidden, don't move (it stays hidden until focus returns)
+    if(btn.classList.contains('vanish') && !document.hasFocus()) return;
+
     const maxX = window.innerWidth - 150;
     const maxY = window.innerHeight - 100;
-    const minX = 100;
-    const minY = 100;
     
-    const randomX = Math.max(minX, Math.random() * maxX);
-    const randomY = Math.max(minY, Math.random() * maxY);
+    const randomX = Math.max(50, Math.random() * maxX);
+    const randomY = Math.max(50, Math.random() * maxY);
 
     btn.style.left = randomX + 'px';
     btn.style.top = randomY + 'px';
-    
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
-    // Add a random rotation to disorient
+    // Random rotation and scale
     const rotate = (Math.random() * 20) - 10;
-    const scale = 0.8 + Math.random() * 0.4;
-    btn.style.transform = `translate(-50%, -50%) scale(${scale}) rotate(${rotate}deg)`;
+    btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
   }
 
-  // --- LAST RESORT DEFENSE ---
-  // If they somehow click it (e.g. via code), we mock them.
+  // Final check: If they actually click it (scripting or impossible luck)
   btn.addEventListener('mousedown', (e) => {
-      e.preventDefault(); // Stop focus
-      moveButton();
+     e.preventDefault(); // Prevent focus
+     if(e.button === 2) return; // Ignore right clicks here (handled by window)
+     
+     // Even if they click, we check if the mouse is ACTUALLY over the button
+     // This prevents triggered events from console
+     moveButton(); 
   });
-
+  
   btn.addEventListener('click', (e) => {
-    attempts++;
-    scoreDisplay.innerText = attempts;
-    
-    // If the event is "trusted" (human click), it shouldn't be possible due to ghost-mode.
-    // If it happens, it's a frame glitch. We just move and do nothing.
-    if(e.isTrusted) {
-        moveButton();
-        return; 
-    }
-
-    // If e.isTrusted is false, they used JavaScript to click() it.
-    const randomMsg = cheaterMessages[Math.floor(Math.random() * cheaterMessages.length)];
-    showPopup(randomMsg);
-  });
-
-  // Prevent Spacebar/Enter from clicking if they somehow focused it
-  window.addEventListener('keydown', (e) => {
-      if(e.key === ' ' || e.key === 'Enter') {
-          e.preventDefault();
-      }
+      // Mock them anyway
+      attempts++;
+      scoreDisplay.innerText = attempts;
+      showPopup("Nice exploit attempt. Still didn't win.");
   });
 };
 </script>
