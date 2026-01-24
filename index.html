@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Impossible Button</title>
+<title>IMPOSSIBLE</title>
 <style>
   body {
     margin: 0;
     height: 100vh;
-    /* DARK BACKGROUND */
     background-color: #1a1a1a; 
     color: white;
     font-family: 'Courier New', Courier, monospace;
@@ -19,7 +18,6 @@
     align-items: center;
   }
 
-  /* RED TITLE */
   h1 {
     color: #ff4757;
     margin-top: 20px;
@@ -34,8 +32,7 @@
     font-size: 1.5rem;
     pointer-events: none;
     margin-top: 10px;
-    z-index: 1;
-    opacity: 0.7;
+    opacity: 0.8;
   }
 
   #impossible-btn {
@@ -53,24 +50,30 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-    outline: none; /* No focus ring */
+    outline: none;
     transition: background 0.1s;
   }
 
-  /* Glitch effect */
-  .vanish { opacity: 0; pointer-events: none; }
+  /* GHOST MODE:
+     This class makes the button "intangible". 
+     Clicks pass right through it like air.
+  */
+  .ghost {
+    pointer-events: none !important;
+  }
 
 </style>
 </head>
 <body>
 
 <h1>IMPOSSIBLE BUTTON</h1>
-<div id="score-container">Failures: 0</div>
+<div id="score-container">Failures: <span id="score">0</span></div>
 
 <button id="impossible-btn" tabindex="-1">CLICK ME</button>
 
 <script>
   const btn = document.getElementById('impossible-btn');
+  const scoreSpan = document.getElementById('score');
   const insults = ["Too Slow!", "Nice Try", "Nope", "Missed!", "Not today", "Oof", "404 Error", "Try Harder"];
 
   // ==========================================
@@ -82,12 +85,8 @@
     const btnY = rect.top + rect.height / 2;
     const distance = Math.hypot(x - btnX, y - btnY);
 
-    // If mouse is within 150px, MOVE IT
-    if (distance < 150) {
-      if(Math.random() > 0.9) {
-          btn.classList.add('vanish');
-          setTimeout(() => btn.classList.remove('vanish'), 300);
-      }
+    // Trigger movement if mouse is within 200px
+    if (distance < 200) {
       moveButton();
     }
   };
@@ -99,14 +98,13 @@
   // 2. THE MOVEMENT ENGINE
   // ==========================================
   function moveButton() {
-    // Briefly disable pointer events to prevent lag-clicks
-    btn.style.pointerEvents = 'none';
-    setTimeout(() => { btn.style.pointerEvents = 'auto'; }, 50);
+    // SECURITY: INSTANTLY turn off clickability
+    btn.classList.add('ghost');
 
     const maxX = window.innerWidth - 150;
     const maxY = window.innerHeight - 150;
     
-    // Random position
+    // Random Position
     const randomX = Math.max(50, Math.random() * maxX);
     const randomY = Math.max(150, Math.random() * maxY);
 
@@ -114,49 +112,55 @@
     btn.style.top = randomY + 'px';
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
-    // Chaos rotation
     const rotate = (Math.random() * 40) - 20;
     btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
+
+    // Only become clickable again after 200ms IF the mouse isn't near
+    setTimeout(() => {
+        btn.classList.remove('ghost');
+    }, 200);
   }
 
   // ==========================================
-  // 3. THE "NULL" EVENT HANDLERS
+  // 3. THE "DEAD" CLICK HANDLER
   // ==========================================
-
-  // Prevent Right Click
-  document.addEventListener('contextmenu', (e) => { 
-    e.preventDefault(); 
-    moveButton(); 
-  });
-
-  // Prevent Keyboard Interaction
-  document.addEventListener('keydown', (e) => { 
-    if(e.key === "Tab" || e.key === "Enter" || e.key === "Space") {
-        e.preventDefault(); 
-        moveButton();
-    } 
-  });
-
-  // Prevent Mouse Down (The primary trigger)
-  btn.addEventListener('mousedown', (e) => { 
-    e.preventDefault(); 
-    moveButton(); 
-  });
-
-  // THE VOID: Even if they click, NOTHING happens.
+  
+  // Even if they click (Lag, Luck, Scripting)...
   btn.addEventListener('click', (e) => {
+      // KILL THE EVENT
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation();
+
+      // FORCE SCORE TO 0
+      // We do not add 1. We verify it is 0.
+      scoreSpan.innerText = "0";
       
-      // We don't update score. We don't show a popup.
-      // We just move the button away again to mock them silently.
+      // Punish them by moving the button again
       moveButton();
       
+      // Return false to stop browser processing
       return false;
   });
 
-  // Resize trap
+  // Mousedown overrides click
+  btn.addEventListener('mousedown', (e) => { 
+      e.preventDefault(); 
+      moveButton(); 
+  });
+
+  // Disable Right Click
+  document.addEventListener('contextmenu', (e) => { 
+      e.preventDefault(); 
+      moveButton(); 
+  });
+
+  // Disable Keys
+  document.addEventListener('keydown', (e) => { 
+      e.preventDefault(); 
+      moveButton(); 
+  });
+
   window.addEventListener('resize', moveButton);
 
 </script>
