@@ -3,62 +3,63 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>You Cannot Win</title>
+<title>Impossible Button</title>
 <style>
   body {
     margin: 0;
     height: 100vh;
-    background-color: #1a1a1a;
-    color: white;
-    font-family: 'Courier New', Courier, monospace;
-    overflow: hidden; /* No scrolling allowed */
-    user-select: none; /* Cannot highlight text */
+    font-family: sans-serif;
+    overflow: hidden; /* Prevents scrollbars when button moves to edge */
+    user-select: none; /* Prevents text highlighting */
+    background-color: #f0f0f0; /* Standard light background */
   }
 
   #score-container {
     position: absolute;
     top: 20px;
     left: 20px;
-    font-size: 1.5rem;
+    font-size: 24px;
+    font-weight: bold;
     pointer-events: none;
   }
 
   #impossible-btn {
     position: absolute;
     padding: 15px 30px;
-    font-size: 1.2rem;
+    font-size: 18px;
     font-weight: bold;
     color: white;
-    background: #ff4757;
+    background: #ff0000;
     border: none;
-    border-radius: 50px;
+    border-radius: 5px;
     cursor: pointer;
-    box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
-    transition: transform 0.1s; /* Only transform transitions, position is instant */
-    z-index: 10;
-    outline: none; /* No focus ring */
+    /* Important: Initial position needs to be set for the math to work first time */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); 
+    outline: none; /* Removes the blue focus ring */
   }
 
-  /* When the button "glitches" out */
+  /* The class that makes it briefly disappear */
   .vanish {
     opacity: 0;
     pointer-events: none;
   }
 
-  /* The Popup Modal */
+  /* Popup Styles */
   #popup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #333;
-    padding: 20px 40px;
-    border: 2px solid #ff4757;
-    border-radius: 10px;
+    background: white;
+    padding: 30px;
+    border: 1px solid #ccc;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border-radius: 8px;
     text-align: center;
     display: none;
-    z-index: 100;
-    box-shadow: 0 0 50px black;
+    z-index: 1000;
   }
 
   #popup.active {
@@ -67,39 +68,20 @@
 
   #popup button {
     margin-top: 15px;
-    padding: 10px 20px;
+    padding: 8px 16px;
     cursor: pointer;
-    background: #fff;
-    border: none;
-    font-weight: bold;
-  }
-  
-  #screen-too-small {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: black;
-    z-index: 200;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 20px;
   }
 </style>
 </head>
 <body>
 
-<div id="score-container">Failures: <span id="score">0</span></div>
+<div id="score-container">Attempts: <span id="score">0</span></div>
 
-<button id="impossible-btn" tabindex="-1">CLICK ME</button>
+<button id="impossible-btn" tabindex="-1">Click Me</button>
 
 <div id="popup">
   <h2 id="popup-text"></h2>
   <button onclick="closePopup()">Try Again</button>
-</div>
-
-<div id="screen-too-small">
-    <h1>Don't try to trap me.<br>Make the window bigger.</h1>
 </div>
 
 <script>
@@ -107,69 +89,75 @@
   const scoreDisplay = document.getElementById('score');
   const popup = document.getElementById('popup');
   const popupText = document.getElementById('popup-text');
-  const tooSmallMsg = document.getElementById('screen-too-small');
 
   let attempts = 0;
-  
   const insults = [
     "Too Slow!", "Nice Try", "Nope", "Missed!", 
     "In your dreams", "Not today", "Oof", "Too easy", 
     "Give up", "Lag?", "Matrix says no", "404 Error"
   ];
 
-  // ============================================
-  // 1. THE PHYSICS ENGINE (Forcefield)
-  // ============================================
-  const handleInteraction = (x, y) => {
+  // 1. DISABLE RIGHT CLICK (Context Menu)
+  // This prevents the menu from opening and moves the button
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    moveButton();
+  });
+
+  // 2. DISABLE TAB/ENTER KEYS
+  // Prevents using keyboard to focus the button
+  document.addEventListener('keydown', (e) => {
+    if(e.key === "Tab" || e.key === "Enter") {
+        e.preventDefault();
+        moveButton();
+    }
+  });
+
+  // 3. HANDLE MOVEMENT (Mouse & Touch)
+  const handleMove = (x, y) => {
     if (popup.classList.contains('active')) return;
 
     const btnRect = btn.getBoundingClientRect();
     const btnCenterX = btnRect.left + btnRect.width / 2;
     const btnCenterY = btnRect.top + btnRect.height / 2;
     
-    // Calculate distance between cursor/finger and button center
+    // Calculate distance
     const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
 
-    // If within 150px, RUN AWAY
+    // If closer than 150px, move
     if (distance < 150) {
-      // 10% chance to visually glitch out
       if(Math.random() > 0.9) {
           btn.classList.add('vanish');
-          setTimeout(() => btn.classList.remove('vanish'), 300);
+          setTimeout(() => btn.classList.remove('vanish'), 500);
       }
       moveButton();
     }
   };
 
-  // Mouse tracker
-  document.addEventListener('mousemove', (e) => handleInteraction(e.clientX, e.clientY));
+  // Mouse listener
+  document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
 
-  // Touch tracker (for mobile) - Passive: false allows us to prevent scroll if needed
+  // Touch listener (for mobile phones)
   document.addEventListener('touchstart', (e) => {
       const touch = e.touches[0];
-      handleInteraction(touch.clientX, touch.clientY);
-  }, { passive: false });
-  
-  document.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      handleInteraction(touch.clientX, touch.clientY);
-  }, { passive: false });
+      handleMove(touch.clientX, touch.clientY);
+  }, { passive: false }); // passive: false allows preventing default if needed
 
-  // ============================================
-  // 2. THE MOVEMENT LOGIC
-  // ============================================
+  // 4. THE MOVE FUNCTION
   function moveButton() {
-    // Check if they are trying to cheat by making window small
-    if(window.innerWidth < 400 || window.innerHeight < 400) {
-        tooSmallMsg.style.display = 'flex';
-        return; 
-    } else {
-        tooSmallMsg.style.display = 'none';
+    // If hidden, don't move (it stays hidden until focus returns)
+    if(btn.classList.contains('vanish') && !document.hasFocus()) return;
+
+    // Safety check for resize trapping
+    if(window.innerWidth < 200 || window.innerHeight < 200) {
+        alert("Window too small!");
+        return;
     }
 
-    const maxX = window.innerWidth - 150;
+    const maxX = window.innerWidth - 100;
     const maxY = window.innerHeight - 100;
     
+    // Ensure it doesn't spawn off-screen
     const randomX = Math.max(50, Math.random() * maxX);
     const randomY = Math.max(50, Math.random() * maxY);
 
@@ -177,65 +165,41 @@
     btn.style.top = randomY + 'px';
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
-    // Add random rotation to make it look chaotic
-    const rotate = (Math.random() * 40) - 20;
-    btn.style.transform = `rotate(${rotate}deg)`;
+    // Random rotation (Restored your original translate logic)
+    const rotate = (Math.random() * 20) - 10;
+    btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
   }
 
-  // ============================================
-  // 3. THE "IMPOSSIBLE" DEFENSES
-  // ============================================
-
-  // DEFENSE A: Prevent Right Click Context Menu
-  document.addEventListener('contextmenu', (e) => {
-      e.preventDefault(); // Stop the menu from opening
-      moveButton(); // Move the button to mock them
-  });
-
-  // DEFENSE B: Mousedown (The moment they press, before release)
+  // 5. THE ULTIMATE DEFENSE: MOUSEDOWN
+  // This triggers BEFORE a 'click'. Even if they are over the button,
+  // pressing the mouse button down moves the element immediately.
+  // The 'click' event (release) happens on empty space.
   btn.addEventListener('mousedown', (e) => {
      e.preventDefault(); 
-     // If they manage to click, move it BEFORE the click registers
      moveButton(); 
   });
 
-  // DEFENSE C: Keyboard Navigation Block
-  // If they hit Tab or Enter to try and focus the button
-  document.addEventListener('keydown', (e) => {
-      if (e.key === 'Tab' || e.key === 'Enter') {
-          e.preventDefault();
-          moveButton();
-      }
-  });
-
-  // DEFENSE D: The "Hacker" Catch
-  // If they somehow trigger a click event via console script
+  // 6. FINAL FALLBACK
+  // If they somehow script a click event
   btn.addEventListener('click', (e) => {
       attempts++;
       scoreDisplay.innerText = attempts;
-      showPopup("System: Exploit Detected. You still lose.");
-  });
-  
-  // DEFENSE E: Anti-Resize Trap
-  window.addEventListener('resize', () => {
-      moveButton(); // Move immediately on resize
+      showPopup("Nice exploit attempt. Still didn't win.");
   });
 
-  // ============================================
-  // 4. UTILITIES
-  // ============================================
+  // Popup logic
   function showPopup(msg) {
     popupText.innerText = msg;
     popup.classList.add('active');
   }
 
-  function closePopup() {
+  window.closePopup = function() { // Made global so HTML onclick finds it
     popup.classList.remove('active');
-    moveButton(); // Move it again just to be sure
-  }
-
-  // Initialize position
-  moveButton();
+    moveButton();
+  };
+  
+  // Anti-Resize Trap
+  window.addEventListener('resize', moveButton);
 
 </script>
 
