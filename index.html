@@ -19,7 +19,7 @@
     align-items: center;
   }
 
-  /* TITLE IN RED */
+  /* RED TITLE */
   h1 {
     color: #ff4757;
     margin-top: 20px;
@@ -35,6 +35,7 @@
     pointer-events: none;
     margin-top: 10px;
     z-index: 1;
+    opacity: 0.7;
   }
 
   #impossible-btn {
@@ -48,178 +49,116 @@
     border-radius: 50px;
     cursor: pointer;
     box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
-    /* Initial centering */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
     outline: none; /* No focus ring */
+    transition: background 0.1s;
   }
 
-  /* Glitch effect class */
-  .vanish {
-    opacity: 0;
-    pointer-events: none;
-  }
+  /* Glitch effect */
+  .vanish { opacity: 0; pointer-events: none; }
 
-  /* Dark Theme Popup */
-  #popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #333;
-    padding: 30px 50px;
-    border: 2px solid #ff4757;
-    box-shadow: 0 0 50px black;
-    border-radius: 10px;
-    text-align: center;
-    display: none;
-    z-index: 1000;
-  }
-
-  #popup.active {
-    display: block;
-  }
-
-  #popup h2 {
-      color: white;
-      margin-bottom: 20px;
-  }
-
-  #popup button {
-    padding: 10px 20px;
-    cursor: pointer;
-    background: #ff4757;
-    color: white;
-    border: none;
-    font-weight: bold;
-    font-family: inherit;
-  }
 </style>
 </head>
 <body>
 
 <h1>IMPOSSIBLE BUTTON</h1>
-
-<div id="score-container">Failures: <span id="score">0</span></div>
+<div id="score-container">Failures: 0</div>
 
 <button id="impossible-btn" tabindex="-1">CLICK ME</button>
 
-<div id="popup">
-  <h2 id="popup-text"></h2>
-  <button onclick="closePopup()">TRY AGAIN</button>
-</div>
-
 <script>
   const btn = document.getElementById('impossible-btn');
-  const scoreDisplay = document.getElementById('score');
-  const popup = document.getElementById('popup');
-  const popupText = document.getElementById('popup-text');
+  const insults = ["Too Slow!", "Nice Try", "Nope", "Missed!", "Not today", "Oof", "404 Error", "Try Harder"];
 
-  let attempts = 0;
-  const insults = [
-    "Too Slow!", "Nice Try", "Nope", "Missed!", 
-    "In your dreams", "Not today", "Oof", "Too easy", 
-    "Give up", "Lag?", "Matrix says no", "404 Error"
-  ];
-
-  // 1. BLOCK RIGHT CLICK
-  document.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    moveButton();
-  });
-
-  // 2. BLOCK KEYBOARD (Tab/Enter)
-  document.addEventListener('keydown', (e) => {
-    if(e.key === "Tab" || e.key === "Enter") {
-        e.preventDefault();
-        moveButton();
-    }
-  });
-
-  // 3. FORCEFIELD LOGIC (Mouse & Touch)
+  // ==========================================
+  // 1. THE PHYSICS (Forcefield)
+  // ==========================================
   const handleMove = (x, y) => {
-    if (popup.classList.contains('active')) return;
+    const rect = btn.getBoundingClientRect();
+    const btnX = rect.left + rect.width / 2;
+    const btnY = rect.top + rect.height / 2;
+    const distance = Math.hypot(x - btnX, y - btnY);
 
-    const btnRect = btn.getBoundingClientRect();
-    const btnCenterX = btnRect.left + btnRect.width / 2;
-    const btnCenterY = btnRect.top + btnRect.height / 2;
-    
-    // Pythagorean distance check
-    const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
-
-    // 150px Radius Forcefield
+    // If mouse is within 150px, MOVE IT
     if (distance < 150) {
-      // Occasional glitch effect
       if(Math.random() > 0.9) {
           btn.classList.add('vanish');
-          setTimeout(() => btn.classList.remove('vanish'), 500);
+          setTimeout(() => btn.classList.remove('vanish'), 300);
       }
       moveButton();
     }
   };
 
-  // Tracking Mouse
   document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
+  document.addEventListener('touchstart', (e) => handleMove(e.touches[0].clientX, e.touches[0].clientY), {passive:false});
 
-  // Tracking Touch (Mobile)
-  document.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      handleMove(touch.clientX, touch.clientY);
-  }, { passive: false });
-
-  // 4. MOVEMENT ENGINE
+  // ==========================================
+  // 2. THE MOVEMENT ENGINE
+  // ==========================================
   function moveButton() {
-    if(btn.classList.contains('vanish') && !document.hasFocus()) return;
+    // Briefly disable pointer events to prevent lag-clicks
+    btn.style.pointerEvents = 'none';
+    setTimeout(() => { btn.style.pointerEvents = 'auto'; }, 50);
 
-    // Window boundaries
     const maxX = window.innerWidth - 150;
     const maxY = window.innerHeight - 150;
     
-    // Random coordinates (preventing edge stuck)
+    // Random position
     const randomX = Math.max(50, Math.random() * maxX);
-    const randomY = Math.max(150, Math.random() * maxY); // 150 buffer for Title
+    const randomY = Math.max(150, Math.random() * maxY);
 
     btn.style.left = randomX + 'px';
     btn.style.top = randomY + 'px';
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
-    // Rotate
-    const rotate = (Math.random() * 20) - 10;
+    // Chaos rotation
+    const rotate = (Math.random() * 40) - 20;
     btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
   }
 
-  // 5. ANTI-CLICK DEFENSE (Mousedown)
-  // Moves button immediately on press down
-  btn.addEventListener('mousedown', (e) => {
-     e.preventDefault(); 
-     moveButton(); 
+  // ==========================================
+  // 3. THE "NULL" EVENT HANDLERS
+  // ==========================================
+
+  // Prevent Right Click
+  document.addEventListener('contextmenu', (e) => { 
+    e.preventDefault(); 
+    moveButton(); 
   });
 
-  // 6. FALLBACK MOCKERY
-  // If they somehow click it
+  // Prevent Keyboard Interaction
+  document.addEventListener('keydown', (e) => { 
+    if(e.key === "Tab" || e.key === "Enter" || e.key === "Space") {
+        e.preventDefault(); 
+        moveButton();
+    } 
+  });
+
+  // Prevent Mouse Down (The primary trigger)
+  btn.addEventListener('mousedown', (e) => { 
+    e.preventDefault(); 
+    moveButton(); 
+  });
+
+  // THE VOID: Even if they click, NOTHING happens.
   btn.addEventListener('click', (e) => {
-      attempts++;
-      scoreDisplay.innerText = attempts;
-      showPopup("Nice exploit. You still didn't win.");
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      
+      // We don't update score. We don't show a popup.
+      // We just move the button away again to mock them silently.
+      moveButton();
+      
+      return false;
   });
 
-  // Popup Controls
-  function showPopup(msg) {
-    popupText.innerText = msg;
-    popup.classList.add('active');
-  }
-
-  window.closePopup = function() {
-    popup.classList.remove('active');
-    moveButton();
-  };
-  
-  // Prevent trapping by resizing window
+  // Resize trap
   window.addEventListener('resize', moveButton);
 
 </script>
-
 </body>
 </html>
