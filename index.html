@@ -8,55 +8,71 @@
   body {
     margin: 0;
     height: 100vh;
-    font-family: sans-serif;
-    overflow: hidden; /* Prevents scrollbars when button moves to edge */
-    user-select: none; /* Prevents text highlighting */
-    background-color: #f0f0f0; /* Standard light background */
+    /* DARK BACKGROUND */
+    background-color: #1a1a1a; 
+    color: white;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden; 
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* TITLE IN RED */
+  h1 {
+    color: #ff4757;
+    margin-top: 20px;
+    font-size: 3rem;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+    pointer-events: none;
+    z-index: 1;
   }
 
   #score-container {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 1.5rem;
     pointer-events: none;
+    margin-top: 10px;
+    z-index: 1;
   }
 
   #impossible-btn {
     position: absolute;
     padding: 15px 30px;
-    font-size: 18px;
+    font-size: 1.2rem;
     font-weight: bold;
     color: white;
-    background: #ff0000;
+    background: #ff4757;
     border: none;
-    border-radius: 5px;
+    border-radius: 50px;
     cursor: pointer;
-    /* Important: Initial position needs to be set for the math to work first time */
-    left: 50%;
+    box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
+    /* Initial centering */
     top: 50%;
-    transform: translate(-50%, -50%); 
-    outline: none; /* Removes the blue focus ring */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    outline: none; /* No focus ring */
   }
 
-  /* The class that makes it briefly disappear */
+  /* Glitch effect class */
   .vanish {
     opacity: 0;
     pointer-events: none;
   }
 
-  /* Popup Styles */
+  /* Dark Theme Popup */
   #popup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
-    padding: 30px;
-    border: 1px solid #ccc;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    border-radius: 8px;
+    background: #333;
+    padding: 30px 50px;
+    border: 2px solid #ff4757;
+    box-shadow: 0 0 50px black;
+    border-radius: 10px;
     text-align: center;
     display: none;
     z-index: 1000;
@@ -66,22 +82,33 @@
     display: block;
   }
 
+  #popup h2 {
+      color: white;
+      margin-bottom: 20px;
+  }
+
   #popup button {
-    margin-top: 15px;
-    padding: 8px 16px;
+    padding: 10px 20px;
     cursor: pointer;
+    background: #ff4757;
+    color: white;
+    border: none;
+    font-weight: bold;
+    font-family: inherit;
   }
 </style>
 </head>
 <body>
 
-<div id="score-container">Attempts: <span id="score">0</span></div>
+<h1>IMPOSSIBLE BUTTON</h1>
 
-<button id="impossible-btn" tabindex="-1">Click Me</button>
+<div id="score-container">Failures: <span id="score">0</span></div>
+
+<button id="impossible-btn" tabindex="-1">CLICK ME</button>
 
 <div id="popup">
   <h2 id="popup-text"></h2>
-  <button onclick="closePopup()">Try Again</button>
+  <button onclick="closePopup()">TRY AGAIN</button>
 </div>
 
 <script>
@@ -97,15 +124,13 @@
     "Give up", "Lag?", "Matrix says no", "404 Error"
   ];
 
-  // 1. DISABLE RIGHT CLICK (Context Menu)
-  // This prevents the menu from opening and moves the button
+  // 1. BLOCK RIGHT CLICK
   document.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     moveButton();
   });
 
-  // 2. DISABLE TAB/ENTER KEYS
-  // Prevents using keyboard to focus the button
+  // 2. BLOCK KEYBOARD (Tab/Enter)
   document.addEventListener('keydown', (e) => {
     if(e.key === "Tab" || e.key === "Enter") {
         e.preventDefault();
@@ -113,7 +138,7 @@
     }
   });
 
-  // 3. HANDLE MOVEMENT (Mouse & Touch)
+  // 3. FORCEFIELD LOGIC (Mouse & Touch)
   const handleMove = (x, y) => {
     if (popup.classList.contains('active')) return;
 
@@ -121,11 +146,12 @@
     const btnCenterX = btnRect.left + btnRect.width / 2;
     const btnCenterY = btnRect.top + btnRect.height / 2;
     
-    // Calculate distance
+    // Pythagorean distance check
     const distance = Math.hypot(x - btnCenterX, y - btnCenterY);
 
-    // If closer than 150px, move
+    // 150px Radius Forcefield
     if (distance < 150) {
+      // Occasional glitch effect
       if(Math.random() > 0.9) {
           btn.classList.add('vanish');
           setTimeout(() => btn.classList.remove('vanish'), 500);
@@ -134,71 +160,63 @@
     }
   };
 
-  // Mouse listener
+  // Tracking Mouse
   document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
 
-  // Touch listener (for mobile phones)
+  // Tracking Touch (Mobile)
   document.addEventListener('touchstart', (e) => {
       const touch = e.touches[0];
       handleMove(touch.clientX, touch.clientY);
-  }, { passive: false }); // passive: false allows preventing default if needed
+  }, { passive: false });
 
-  // 4. THE MOVE FUNCTION
+  // 4. MOVEMENT ENGINE
   function moveButton() {
-    // If hidden, don't move (it stays hidden until focus returns)
     if(btn.classList.contains('vanish') && !document.hasFocus()) return;
 
-    // Safety check for resize trapping
-    if(window.innerWidth < 200 || window.innerHeight < 200) {
-        alert("Window too small!");
-        return;
-    }
-
-    const maxX = window.innerWidth - 100;
-    const maxY = window.innerHeight - 100;
+    // Window boundaries
+    const maxX = window.innerWidth - 150;
+    const maxY = window.innerHeight - 150;
     
-    // Ensure it doesn't spawn off-screen
+    // Random coordinates (preventing edge stuck)
     const randomX = Math.max(50, Math.random() * maxX);
-    const randomY = Math.max(50, Math.random() * maxY);
+    const randomY = Math.max(150, Math.random() * maxY); // 150 buffer for Title
 
     btn.style.left = randomX + 'px';
     btn.style.top = randomY + 'px';
     btn.innerText = insults[Math.floor(Math.random() * insults.length)];
     
-    // Random rotation (Restored your original translate logic)
+    // Rotate
     const rotate = (Math.random() * 20) - 10;
     btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
   }
 
-  // 5. THE ULTIMATE DEFENSE: MOUSEDOWN
-  // This triggers BEFORE a 'click'. Even if they are over the button,
-  // pressing the mouse button down moves the element immediately.
-  // The 'click' event (release) happens on empty space.
+  // 5. ANTI-CLICK DEFENSE (Mousedown)
+  // Moves button immediately on press down
   btn.addEventListener('mousedown', (e) => {
      e.preventDefault(); 
      moveButton(); 
   });
 
-  // 6. FINAL FALLBACK
-  // If they somehow script a click event
+  // 6. FALLBACK MOCKERY
+  // If they somehow click it
   btn.addEventListener('click', (e) => {
       attempts++;
       scoreDisplay.innerText = attempts;
-      showPopup("Nice exploit attempt. Still didn't win.");
+      showPopup("Nice exploit. You still didn't win.");
   });
 
-  // Popup logic
+  // Popup Controls
   function showPopup(msg) {
     popupText.innerText = msg;
     popup.classList.add('active');
   }
 
-  window.closePopup = function() { // Made global so HTML onclick finds it
+  window.closePopup = function() {
     popup.classList.remove('active');
     moveButton();
   };
   
-  // Anti-Resize Trap
+  // Prevent trapping by resizing window
   window.addEventListener('resize', moveButton);
 
 </script>
