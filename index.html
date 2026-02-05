@@ -1,168 +1,107 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IMPOSSIBLE</title>
 <style>
   body {
     margin: 0;
-    height: 100vh;
-    background-color: #1a1a1a; 
-    color: white;
-    font-family: 'Courier New', Courier, monospace;
-    overflow: hidden; 
-    user-select: none;
+    padding: 20px;
+    background-color: #333;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;
   }
-
-  h1 {
-    color: #ff4757;
-    margin-top: 20px;
-    font-size: 3rem;
-    text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
-    pointer-events: none;
-    z-index: 1;
+  .book-page {
+    width: 4in;  
+    height: 10in; 
+    background-color: #e6dccf; 
+    padding: 30px;
+    font-family: 'Times New Roman', serif; 
+    position: relative;
+    box-sizing: border-box;
+    border: 1px solid #000;
   }
-
-  #score-container {
-    font-size: 1.5rem;
-    pointer-events: none;
-    margin-top: 10px;
-    opacity: 0.8;
-  }
-
-  #impossible-btn {
-    position: absolute;
-    padding: 15px 30px;
-    font-size: 1.2rem;
+  .title {
+    color: #4a7c36; 
+    font-size: 24px;
     font-weight: bold;
-    color: white;
-    background: #ff4757;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-    outline: none;
-    transition: background 0.1s;
+    margin-bottom: 30px;
+    margin-top: 10px;
   }
-
-  /* GHOST MODE:
-     This class makes the button "intangible". 
-     Clicks pass right through it like air.
-  */
-  .ghost {
-    pointer-events: none !important;
+  .content {
+    font-size: 11pt; 
+    line-height: 2.2; /* Spacing stays big to fill page */
+    color: #000;
+    font-weight: 500;
   }
-
+  /* FOOTER ALIGNMENT */
+  .footer {
+    position: absolute;
+    bottom: 30px; 
+    right: 30px;   /* MOVED TO RIGHT CORNER (Standard for photos) */
+    display: flex;
+    flex-direction: column; /* Stacks items vertically */
+    align-items: center; /* Centers the name under the photo */
+    text-align: center;
+  }
+  .photo-box {
+    width: 80px;
+    height: 100px;
+    border: 2px solid #fff;
+    background-color: #ccc;
+    overflow: hidden;
+    margin-bottom: 10px; /* Space between photo and name */
+  }
+  .photo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .author {
+    font-weight: bold;
+    font-size: 14pt;
+    color: #5d4037; 
+    line-height: 1.3;
+  }
 </style>
 </head>
 <body>
 
-<h1>IMPOSSIBLE BUTTON</h1>
-<div id="score-container">Failures: <span id="score">0</span></div>
-
-<button id="impossible-btn" tabindex="-1">CLICK ME</button>
-
-<script>
-  const btn = document.getElementById('impossible-btn');
-  const scoreSpan = document.getElementById('score');
-  const insults = ["Too Slow!", "Nice Try", "Nope", "Missed!", "Not today", "Oof", "404 Error", "Try Harder"];
-
-  // ==========================================
-  // 1. THE PHYSICS (Forcefield)
-  // ==========================================
-  const handleMove = (x, y) => {
-    const rect = btn.getBoundingClientRect();
-    const btnX = rect.left + rect.width / 2;
-    const btnY = rect.top + rect.height / 2;
-    const distance = Math.hypot(x - btnX, y - btnY);
-
-    // Trigger movement if mouse is within 200px
-    if (distance < 200) {
-      moveButton();
-    }
-  };
-
-  document.addEventListener('mousemove', (e) => handleMove(e.clientX, e.clientY));
-  document.addEventListener('touchstart', (e) => handleMove(e.touches[0].clientX, e.touches[0].clientY), {passive:false});
-
-  // ==========================================
-  // 2. THE MOVEMENT ENGINE
-  // ==========================================
-  function moveButton() {
-    // SECURITY: INSTANTLY turn off clickability
-    btn.classList.add('ghost');
-
-    const maxX = window.innerWidth - 150;
-    const maxY = window.innerHeight - 150;
-    
-    // Random Position
-    const randomX = Math.max(50, Math.random() * maxX);
-    const randomY = Math.max(150, Math.random() * maxY);
-
-    btn.style.left = randomX + 'px';
-    btn.style.top = randomY + 'px';
-    btn.innerText = insults[Math.floor(Math.random() * insults.length)];
-    
-    const rotate = (Math.random() * 40) - 20;
-    btn.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
-
-    // Only become clickable again after 200ms IF the mouse isn't near
-    setTimeout(() => {
-        btn.classList.remove('ghost');
-    }, 200);
-  }
-
-  // ==========================================
-  // 3. THE "DEAD" CLICK HANDLER
-  // ==========================================
+<div class="book-page">
+  <div class="title">எது அழகு!</div>
   
-  // Even if they click (Lag, Luck, Scripting)...
-  btn.addEventListener('click', (e) => {
-      // KILL THE EVENT
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
+  <div class="content">
+    மண்ணில் விழும்<br>
+    மழைத்துளி அழகு!<br>
+    <br>
+    மலரில் விழும்<br>
+    பனித்துளி அழகு!<br>
+    <br>
+    இசைந்தாடும் தென்றல் அழகு!<br>
+    இசையோடு நடனம் அழகு!<br>
+    <br>
+    வயல் வெளியில் நாற்றழகு!<br>
+    நெல்லின் கதிர் அழகு!<br>
+    <br>
+    பொருளோடு பேசும்<br>
+    சொல் அழகு!<br>
+    <br>
+    சில சமயங்களில்<br>
+    மௌனம் கூட அழகு!<br>
+    <br>
+    மழலையின் சிரிப்பழகு!<br>
+    உயர்ந்து விழும் அருவி அழகு!<br>
+    <br>
+    எனினும் உயர்ந்த<br>
+    நல் உள்ளமே அழகு!
+  </div>
 
-      // FORCE SCORE TO 0
-      // We do not add 1. We verify it is 0.
-      scoreSpan.innerText = "0";
-      
-      // Punish them by moving the button again
-      moveButton();
-      
-      // Return false to stop browser processing
-      return false;
-  });
+  <div class="footer">
+    <div class="photo-box">
+       <img src="myphoto.jpg" alt="Photo"> 
+    </div>
+    
+    <div class="author">சாரா சையது <br> - 9 - 'A'</div>
+  </div>
+</div>
 
-  // Mousedown overrides click
-  btn.addEventListener('mousedown', (e) => { 
-      e.preventDefault(); 
-      moveButton(); 
-  });
-
-  // Disable Right Click
-  document.addEventListener('contextmenu', (e) => { 
-      e.preventDefault(); 
-      moveButton(); 
-  });
-
-  // Disable Keys
-  document.addEventListener('keydown', (e) => { 
-      e.preventDefault(); 
-      moveButton(); 
-  });
-
-  window.addEventListener('resize', moveButton);
-
-</script>
 </body>
 </html>
