@@ -1,107 +1,329 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<style>
-  body {
-    margin: 0;
-    padding: 20px;
-    background-color: #333;
-    display: flex;
-    justify-content: center;
-  }
-  .book-page {
-    width: 4in;  
-    height: 10in; 
-    background-color: #e6dccf; 
-    padding: 30px;
-    font-family: 'Times New Roman', serif; 
-    position: relative;
-    box-sizing: border-box;
-    border: 1px solid #000;
-  }
-  .title {
-    color: #4a7c36; 
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 30px;
-    margin-top: 10px;
-  }
-  .content {
-    font-size: 11pt; 
-    line-height: 2.2; /* Spacing stays big to fill page */
-    color: #000;
-    font-weight: 500;
-  }
-  /* FOOTER ALIGNMENT */
-  .footer {
-    position: absolute;
-    bottom: 30px; 
-    right: 30px;   /* MOVED TO RIGHT CORNER (Standard for photos) */
-    display: flex;
-    flex-direction: column; /* Stacks items vertically */
-    align-items: center; /* Centers the name under the photo */
-    text-align: center;
-  }
-  .photo-box {
-    width: 80px;
-    height: 100px;
-    border: 2px solid #fff;
-    background-color: #ccc;
-    overflow: hidden;
-    margin-bottom: 10px; /* Space between photo and name */
-  }
-  .photo-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .author {
-    font-weight: bold;
-    font-size: 14pt;
-    color: #5d4037; 
-    line-height: 1.3;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Danger Zone Writer</title>
+    <style>
+        /* --- VISUALS (Cyberpunk/Dark Mode) --- */
+        body {
+            background-color: #050505;
+            color: #e0e0e0;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 700px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff3b3b;
+            text-shadow: 0 0 10px rgba(255, 59, 59, 0.5);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        /* --- SETUP SCREEN --- */
+        #setup-screen {
+            display: block;
+            background: #111;
+            padding: 40px;
+            border-radius: 15px;
+            border: 1px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        input[type="number"] {
+            background: #222;
+            border: 2px solid #555;
+            color: #fff;
+            padding: 15px;
+            font-size: 1.5rem;
+            width: 100px;
+            text-align: center;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        button.start-btn {
+            background: #ff3b3b;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+        }
+
+        button.start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #ff3b3b;
+        }
+
+        /* --- EDITOR SCREEN (Hidden initially) --- */
+        #editor-screen {
+            display: none;
+            width: 100%;
+        }
+
+        /* The Red Danger Bar */
+        #progress-container {
+            width: 100%;
+            height: 12px;
+            background: #222;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #444;
+            position: relative;
+        }
+
+        #danger-bar {
+            width: 0%;
+            height: 100%;
+            background-color: #ff0000;
+            transition: width 0.1s linear, background-color 0.3s;
+            box-shadow: 0 0 10px #ff0000;
+        }
+
+        /* The Typing Area */
+        textarea {
+            width: 100%;
+            height: 400px;
+            background: #111;
+            border: 2px solid #333;
+            color: #fff;
+            padding: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            border-radius: 10px;
+            outline: none;
+            resize: none;
+            box-sizing: border-box; /* Fixes padding issues */
+            font-family: sans-serif;
+        }
+
+        textarea:focus {
+            border-color: #ff3b3b;
+            box-shadow: 0 0 15px rgba(255, 59, 59, 0.1);
+        }
+
+        textarea.safe {
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        /* Stats & Controls */
+        .status-bar {
+            margin-top: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+        }
+
+        #word-count { font-weight: bold; color: #888; }
+        
+        .copy-btn {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none; /* Hidden until win */
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .copy-btn:hover { background: #ccffcc; }
+
+        /* --- ANIMATIONS --- */
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
 </head>
 <body>
 
-<div class="book-page">
-  <div class="title">எது அழகு!</div>
-  
-  <div class="content">
-    மண்ணில் விழும்<br>
-    மழைத்துளி அழகு!<br>
-    <br>
-    மலரில் விழும்<br>
-    பனித்துளி அழகு!<br>
-    <br>
-    இசைந்தாடும் தென்றல் அழகு!<br>
-    இசையோடு நடனம் அழகு!<br>
-    <br>
-    வயல் வெளியில் நாற்றழகு!<br>
-    நெல்லின் கதிர் அழகு!<br>
-    <br>
-    பொருளோடு பேசும்<br>
-    சொல் அழகு!<br>
-    <br>
-    சில சமயங்களில்<br>
-    மௌனம் கூட அழகு!<br>
-    <br>
-    மழலையின் சிரிப்பழகு!<br>
-    உயர்ந்து விழும் அருவி அழகு!<br>
-    <br>
-    எனினும் உயர்ந்த<br>
-    நல் உள்ளமே அழகு!
-  </div>
+    <div class="container">
+        <h1>DANGER ZONE WRITER</h1>
 
-  <div class="footer">
-    <div class="photo-box">
-       <img src="myphoto.jpg" alt="Photo"> 
+        <div id="setup-screen">
+            <p>How many words do you need to write?</p>
+            <input type="number" id="goalInput" value="100" min="10">
+            <br>
+            <button class="start-btn" onclick="startGame()">Start Writing</button>
+            <p style="font-size: 0.8rem; color: #666; margin-top: 20px;">
+                WARNING: If you stop typing for 3 seconds, text will be deleted.
+            </p>
+        </div>
+
+        <div id="editor-screen">
+            <div id="progress-container">
+                <div id="danger-bar"></div>
+            </div>
+
+            <textarea id="editor" placeholder="Start typing... Don't stop."></textarea>
+            
+            <div class="status-bar">
+                <div id="word-count">0 / 0 Words</div>
+                <button id="copyBtn" class="copy-btn" onclick="copyText()">COPY TEXT</button>
+            </div>
+        </div>
     </div>
-    
-    <div class="author">சாரா சையது <br> - 9 - 'A'</div>
-  </div>
-</div>
 
+    <script>
+        // ELEMENTS
+        const setupScreen = document.getElementById('setup-screen');
+        const editorScreen = document.getElementById('editor-screen');
+        const goalInput = document.getElementById('goalInput');
+        const editor = document.getElementById('editor');
+        const dangerBar = document.getElementById('danger-bar');
+        const wordCountDisplay = document.getElementById('word-count');
+        const copyBtn = document.getElementById('copyBtn');
+
+        // VARIABLES
+        let WORD_GOAL = 0;
+        const TIME_LIMIT = 2000; // 2 seconds
+        let timeLeft = TIME_LIMIT;
+        let timerInterval;
+        let isGameRunning = false;
+        let isSafe = false;
+
+        // 1. START GAME LOGIC
+        function startGame() {
+            const val = parseInt(goalInput.value);
+            if (!val || val < 1) {
+                alert("Please enter a valid word count goal!");
+                return;
+            }
+
+            WORD_GOAL = val;
+            
+            // Switch Screens
+            setupScreen.style.display = "none";
+            editorScreen.style.display = "block";
+            
+            // Update initial display
+            wordCountDisplay.innerText = `0 / ${WORD_GOAL} Words`;
+            
+            // Focus editor immediately
+            editor.value = "";
+            editor.focus();
+        }
+
+        // 2. THE TYPING LOGIC
+        editor.addEventListener('input', () => {
+            if (isSafe) return; // If won, do nothing
+
+            // Start timer on first keystroke
+            if (!isGameRunning) {
+                isGameRunning = true;
+                startTimer();
+            }
+
+            // Reset Timer on every input
+            timeLeft = TIME_LIMIT;
+
+            // Count Words
+            const currentText = editor.value.trim();
+            const words = currentText.length === 0 ? 0 : currentText.split(/\s+/).length;
+            
+            wordCountDisplay.innerText = `${words} / ${WORD_GOAL} Words`;
+
+            // Check Win Condition
+            if (words >= WORD_GOAL) {
+                winGame();
+            }
+        });
+
+        // 3. TIMER & DANGER BAR
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                if (isSafe) return;
+
+                timeLeft -= 100; // Decrease by 100ms
+                
+                // Calculate percentage (0% is safe, 100% is death)
+                // We inverse it visually: Empty bar = Safe, Full bar = Death
+                const percentage = ((TIME_LIMIT - timeLeft) / TIME_LIMIT) * 100;
+                dangerBar.style.width = percentage + "%";
+
+                // Turn bar darker red as it gets fuller
+                if (percentage > 70) {
+                    dangerBar.style.backgroundColor = "#ff0000"; // Bright Red
+                    editor.style.borderColor = "#ff0000";
+                } else {
+                    dangerBar.style.backgroundColor = "#cc0000"; // Darker Red
+                    editor.style.borderColor = "#333";
+                }
+
+                // DEATH CONDITION
+                if (timeLeft <= 0) {
+                    gameOver();
+                }
+            }, 100);
+        }
+
+        // 4. GAME OVER (DELETE EVERYTHING)
+        function gameOver() {
+            clearInterval(timerInterval);
+            editor.value = "";
+            editor.placeholder = "YOU STOPPED. TEXT DELETED. TRY AGAIN.";
+            
+            // Shake Effect
+            document.body.classList.add("shake");
+            setTimeout(() => document.body.classList.remove("shake"), 500);
+
+            // Reset UI
+            dangerBar.style.width = "0%";
+            wordCountDisplay.innerText = `0 / ${WORD_GOAL} Words`;
+            isGameRunning = false; // Player must type to restart
+        }
+
+        // 5. WIN CONDITION
+        function winGame() {
+            isSafe = true;
+            clearInterval(timerInterval);
+            
+            // Visuals
+            dangerBar.style.width = "100%";
+            dangerBar.style.backgroundColor = "#00ff00"; // Green
+            editor.classList.add("safe");
+            
+            // Show Copy Button
+            copyBtn.style.display = "block";
+            wordCountDisplay.style.color = "#00ff00";
+            wordCountDisplay.innerText = "GOAL REACHED! SAFE.";
+        }
+
+        // 6. COPY FUNCTION
+        function copyText() {
+            editor.select();
+            navigator.clipboard.writeText(editor.value).then(() => {
+                copyBtn.innerText = "COPIED!";
+                setTimeout(() => copyBtn.innerText = "COPY TEXT", 2000);
+            });
+        }
+    </script>
 </body>
 </html>
